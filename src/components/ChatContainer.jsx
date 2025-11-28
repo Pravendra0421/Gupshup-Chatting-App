@@ -1,17 +1,44 @@
-import React,{useState} from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { GetMessageServices,sendMessageServices } from "../services/MessageServices";
+import { v4 as uuidv4 } from "uuid";
 const ChatContainer =({currentChat,onBack,currentUser})=>{
     // const [message,setMessage] = useState([]);
     // State to hold the text the user is typing
+    const [messages, setMessages] = useState([]); 
     const [msg, setMsg] = useState("");
+    const scrollRef = useRef();
+    console.log("current user",currentUser._id);
+    console.log("current chat",currentChat._id);
+    useEffect(()=>{
+        const fetchData = async()=>{
+            const response = await GetMessageServices({
+                from:currentUser._id,
+                to:currentChat._id
+            });
+            setMessages(response);
+        }
+        fetchData();
+    },[currentChat]);
     console.log(currentUser);
-    const handleSendMsg=(event)=>{
+    console.log("messages",messages);
+    console.log("msg",msg);
+    const handleSendMsg=async(event)=>{
         event.preventDefault();
         if(msg.length>0){
-            // FUTURE STEP 3: Implement the socket.emit logic here
-            alert(`sending message: ${msg} to ${currentChat.userName}`);
+            await sendMessageServices({
+                from:currentUser._id,
+                to:currentChat._id,
+                message:msg
+            });
+            const msgs = [...messages];
+            msgs.push({ fromSelf: true, message: msg });
+            setMessages(msgs);
             setMsg("");
         }
     };
+    useEffect(() => {
+        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
     if (!currentChat) {
         return <div className="text-white p-10">Loading chat...</div>;
     }
@@ -41,10 +68,24 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                 {/* More options (Future: Video call, Logout) */}
             </div>
             {/* 3. Message Area (Scrollable History) */}
-            <div className="grow p-4 overflow-y-auto space-y-3">
-                {/* For now, just a placeholder for messages */}
-                <p className='text-gray-400 text-center pt-8'>Start your GupShup with {currentChat.userName}...</p>
-                {/* FUTURE STEP 3: Map messages here */}
+            <div className="flex-grow p-4 overflow-y-auto space-y-2 custom-scrollbar">
+                {messages.map((message) => {
+                    return (
+                        <div ref={scrollRef} key={uuidv4()}>
+                            <div className={`flex ${message.fromSelf ? "justify-end" : "justify-start"}`}>
+                                <div className={`
+                                    max-w-[40%] break-words p-3 rounded-xl text-sm md:text-base
+                                    ${message.fromSelf 
+                                        ? "bg-teal-600 text-white rounded-br-none" // My Message Style
+                                        : "bg-slate-700 text-white rounded-bl-none" // Their Message Style
+                                    }
+                                `}>
+                                    <p>{message.message}</p>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
             {/* 4. Input Footer */}
             <form onSubmit={handleSendMsg} className="flex p-4 bg-slate-800 border-t border-slate-700">
