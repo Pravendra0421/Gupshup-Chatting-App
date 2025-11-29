@@ -3,8 +3,6 @@ const Contact =({contacts,currentUser,changeChat})=>{
     const [currentUserName,setCurrentUserName] = useState(undefined);
     const [currentUserImage,setCurrentUserImage] = useState(undefined);
     const [currentSelected,setcurrentSelected] = useState(undefined);
-    console.log("contact list",contacts);
-    console.log("userName",contacts[0].userName);
     useEffect(()=>{
         if(currentUser && currentUser.userName && currentUser.avatarImage){
             setCurrentUserName(currentUser.userName);

@@ -4,10 +4,11 @@ const SocketContext = createContext(null);
 export const SocketProvider =({children}) =>{
     const [socket,setSocket] = useState(null);
     useEffect(()=>{
-        const user = JSON.parse(localStorage.getItem("chat-app-user"));
+        const user = JSON.parse(localStorage.getItem("chat-user"));
         if(user){
             const newSocket = io("http://localhost:3000",{
-                withCredentials:true
+                withCredentials:true,
+                autoConnect:true
             });
             setSocket(newSocket);
             return ()=>newSocket.disconnect();

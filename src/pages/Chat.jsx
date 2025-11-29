@@ -8,7 +8,7 @@ import { ToastContainer } from "react-toastify";
 function Chat() {
   const socket = useSocket();
   const navigate = useNavigate();
-  const [currentUser,setCurrentUser] = useState([]);
+  const [currentUser,setCurrentUser] = useState(undefined);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [currentChat,setCurrentChat] = useState(undefined);
   const [isContactListVisible, setIsContactListVisible] = useState(true);
@@ -21,21 +21,25 @@ function Chat() {
       }
         const userData = await JSON.parse(localStorage.getItem("chat-user"));
         setCurrentUser(userData);
-        if(socket){
-          socket.connect();
-          socket.emit("add-user",userData._id);
-        }
-      
     }
     fetchUser();
-  },[socket,navigate])
+  },[navigate]);
+  useEffect(() => {
+    // Only run if we have a user AND a socket
+    if (currentUser && socket) {
+        socket.emit("add-user", currentUser._id);
+    }
+}, [currentUser, socket]);
   useEffect(()=>{
     const getAllUSer = async()=>{
       if(currentUser && currentUser._id){
         setLoadingContacts(true);
         const result = await GetAllUser();
         if(result.success && result.user){
-          setContact(result.user)
+          const filteredContacts = result.user.filter(
+                    (user) => user._id !== currentUser._id
+                );
+          setContact(filteredContacts);
         }else{
           console.error("failed to fetch users",result.message);
         }

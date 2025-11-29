@@ -1,21 +1,26 @@
 import React, { useState, useEffect, useRef } from "react";
 import { GetMessageServices,sendMessageServices } from "../services/MessageServices";
 import { v4 as uuidv4 } from "uuid";
+import { useSocket } from "../context/SocketContext";
 const ChatContainer =({currentChat,onBack,currentUser})=>{
     // const [message,setMessage] = useState([]);
     // State to hold the text the user is typing
     const [messages, setMessages] = useState([]); 
     const [msg, setMsg] = useState("");
     const scrollRef = useRef();
+    const socket = useSocket();
+    const [arrivalMessage,setArrivalMesaage] =useState(null);
     console.log("current user",currentUser._id);
     console.log("current chat",currentChat._id);
     useEffect(()=>{
         const fetchData = async()=>{
-            const response = await GetMessageServices({
+            if(currentChat){
+                const response = await GetMessageServices({
                 from:currentUser._id,
                 to:currentChat._id
             });
             setMessages(response);
+            }
         }
         fetchData();
     },[currentChat]);
@@ -30,12 +35,30 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                 to:currentChat._id,
                 message:msg
             });
+            socket.emit("send-msg",{
+                to:currentChat._id,
+                from:currentUser._id,
+                msg,
+            })
             const msgs = [...messages];
             msgs.push({ fromSelf: true, message: msg });
             setMessages(msgs);
             setMsg("");
         }
     };
+    useEffect(()=>{
+        if(socket){
+            socket.on("msg-recieve",(data)=>{
+                console.log("🔥 INCOMING DATA TYPE:", typeof data);
+                console.log("🔥 INCOMING DATA:", data);
+                const incomingText = typeof data === 'object' ? data.message:data;
+                setArrivalMesaage({fromSelf:false,message:incomingText})
+            });
+        }
+    },[socket]);
+    useEffect(()=>{
+        arrivalMessage && setMessages((prev)=>[...prev,arrivalMessage]);
+    },[arrivalMessage]);
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -68,13 +91,13 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                 {/* More options (Future: Video call, Logout) */}
             </div>
             {/* 3. Message Area (Scrollable History) */}
-            <div className="flex-grow p-4 overflow-y-auto space-y-2 custom-scrollbar">
+            <div className="grow p-4 overflow-y-auto space-y-2 custom-scrollbar">
                 {messages.map((message) => {
                     return (
                         <div ref={scrollRef} key={uuidv4()}>
                             <div className={`flex ${message.fromSelf ? "justify-end" : "justify-start"}`}>
                                 <div className={`
-                                    max-w-[40%] break-words p-3 rounded-xl text-sm md:text-base
+                                    max-w-[40%] wrap-break-words p-3 rounded-xl text-sm md:text-base
                                     ${message.fromSelf 
                                         ? "bg-teal-600 text-white rounded-br-none" // My Message Style
                                         : "bg-slate-700 text-white rounded-bl-none" // Their Message Style
