@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Contact from "../components/Contact.jsx";
 import ChatContainer from "../components/ChatContainer.jsx";
 import { ToastContainer } from "react-toastify";
+import { ScrollArea } from "@/components/ui/scroll-area";
 function Chat() {
   const socket = useSocket();
   const navigate = useNavigate();
@@ -72,11 +73,13 @@ function Chat() {
                         `}
                     >
                         {currentUser && contact.length > 0 ? (
-                            <Contact
+                            <ScrollArea className="h-[90vh]">
+                              <Contact
                                 contacts={contact} 
                                 currentUser={currentUser}
                                 changeChat={handleChatChange}
                             />
+                            </ScrollArea>
                         ) : (
                              // Loading or No Contacts Message
                              <div className="p-4 text-center text-gray-500">Loading contacts...</div>
@@ -95,12 +98,14 @@ function Chat() {
                         {currentChat === undefined ? (
                           <div>please login</div>
                         ) : (
-                            <ChatContainer 
+                            <ScrollArea className="h-[90vh]">
+                              <ChatContainer 
                                 currentChat={currentChat} 
                                 currentUser={currentUser} 
                                 // Prop for mobile back button
                                 onBack={() => setIsContactListVisible(true)} 
                             />
+                            </ScrollArea>
                         )}
                     </div>
                 </div>
