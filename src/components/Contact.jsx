@@ -13,6 +13,9 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[]})=>{
         setcurrentSelected(index);
         changeChat(contact);
     }
+    console.log("current username",currentUser.userName);
+    const currentname = currentUser.userName;
+    console.log("currentname",currentname);
     return(
         <>
             <div className="flex flex-col h-full bg-slate-800 text-white md:p-4">
@@ -53,8 +56,8 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[]})=>{
                     })}
                 </div>
                 
-            {currentUserName &&(
-                <div className="flex items-center p-3 border-t border-slate-700 bg-slate-900 justify-between">
+            {currentname &&(
+                <div className="absolute bottom-0 flex items-center w-full rounded-2xl p-3 border-t border-slate-700 bg-slate-900 justify-between">
                     <div className="flex items-center gap-3"> 
                         <div className=" h-10 w-10">
                             <img 
@@ -63,8 +66,8 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[]})=>{
                                     className="rounded-full h-full w-full object-cover border-2 border-teal-500"
                             />
                         </div>
-                        <div className="hidden sm:block">
-                                <h2 className="text-lg font-bold text-teal-400">{currentUserName}</h2>
+                        <div className=" sm:block">
+                                <h2 className="text-lg font-bold text-teal-400">{currentname}</h2>
                         </div>
                     </div>  
                     <button 
@@ -75,7 +78,7 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[]})=>{
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
                         </button> 
                 </div>
-        )}
+          )}  
             </div>
         </>
     )
