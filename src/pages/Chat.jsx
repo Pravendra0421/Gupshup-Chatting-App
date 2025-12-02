@@ -106,7 +106,7 @@ useEffect(()=>{
                         `}
                     >
                         {currentChat === undefined ? (
-                          <div><Welcome/></div>
+                          <div><Welcome currentUser={currentUser}/></div>
                         ) : (
                             <ScrollArea className="h-[90vh]">
                               <ChatContainer 
