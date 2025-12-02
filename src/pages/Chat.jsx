@@ -11,6 +11,7 @@ function Chat() {
   const navigate = useNavigate();
   const [currentUser,setCurrentUser] = useState(undefined);
   const [loadingContacts, setLoadingContacts] = useState(false);
+  const [onlineUser,setOnlineUser]= useState([]);
   const [currentChat,setCurrentChat] = useState(undefined);
   const [isContactListVisible, setIsContactListVisible] = useState(true);
   const [contact,setContact] = useState([]);
@@ -31,6 +32,13 @@ function Chat() {
         socket.emit("add-user", currentUser._id);
     }
 }, [currentUser, socket]);
+useEffect(()=>{
+  if(socket){
+    socket.on("online-users",(users)=>{
+      setOnlineUser(users);
+    })
+  }
+})
   useEffect(()=>{
     const getAllUSer = async()=>{
       if(currentUser && currentUser._id){
@@ -78,6 +86,7 @@ function Chat() {
                                 contacts={contact} 
                                 currentUser={currentUser}
                                 changeChat={handleChatChange}
+                                onlineUsers ={onlineUser}
                             />
                             </ScrollArea>
                         ) : (

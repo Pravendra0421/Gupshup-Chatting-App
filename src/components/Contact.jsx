@@ -1,5 +1,5 @@
 import React,{useState,useEffect} from "react";
-const Contact =({contacts,currentUser,changeChat})=>{
+const Contact =({contacts,currentUser,changeChat,onlineUsers=[]})=>{
     const [currentUserName,setCurrentUserName] = useState(undefined);
     const [currentUserImage,setCurrentUserImage] = useState(undefined);
     const [currentSelected,setcurrentSelected] = useState(undefined);
@@ -24,6 +24,8 @@ const Contact =({contacts,currentUser,changeChat})=>{
                 <div>
                     {contacts.map((contact,index)=>{
                         const isSelected = index === currentSelected;
+                        const isOnline =onlineUsers.includes(contact._id);
+                        console.log("isOnline",isOnline);
                         return(
                             <div
                                     key={contact._id}
@@ -39,6 +41,9 @@ const Contact =({contacts,currentUser,changeChat})=>{
                                             alt="avatar" 
                                             className="rounded-full h-full w-full object-cover border-2 border-teal-400"
                                         />
+                                        {isOnline && (
+                                            <span className="absolute left-10  h-3 w-3 rounded-full bg-green-500 border-2 border-slate-800"></span>
+                                        )}
                                     </div>
                                     <div > 
                                         <h3 className="text-base font-semibold truncate">{contact.userName}</h3>
