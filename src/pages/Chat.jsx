@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Contact from "../components/Contact.jsx";
 import ChatContainer from "../components/ChatContainer.jsx";
 import { ToastContainer } from "react-toastify";
+import Welcome from "./Welcome";
 import { ScrollArea } from "@/components/ui/scroll-area";
 function Chat() {
   const socket = useSocket();
@@ -105,7 +106,7 @@ useEffect(()=>{
                         `}
                     >
                         {currentChat === undefined ? (
-                          <div>WelCome to the gupshup</div>
+                          <div><Welcome/></div>
                         ) : (
                             <ScrollArea className="h-[90vh]">
                               <ChatContainer 

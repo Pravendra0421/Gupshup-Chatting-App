@@ -66,8 +66,8 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
         return <div className="text-white p-10">Loading chat...</div>;
     }
     return(
-        <div className="flex flex-col h-full bg-slate-900 text-white">
-            <div className="flex items-center p-4 border-b border-slate-700 bg-slate-800">
+        <div className="flex flex-col  bg-slate-900 h-screen text-white">
+            <div className="absolute w-full flex items-center p-4 border-b border-slate-700 bg-slate-800">
                 <button 
                     onClick={onBack} 
                     className="md:hidden text-teal-400 p-2 mr-2 hover:text-teal-300 rounded-full"
@@ -91,7 +91,7 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                 {/* More options (Future: Video call, Logout) */}
             </div>
             {/* 3. Message Area (Scrollable History) */}
-            <div className="grow p-4 overflow-y-auto space-y-2 custom-scrollbar">
+            <div className="grow p-4 overflow-y-auto  space-y-2 custom-scrollbar">
                 {messages.map((message) => {
                     return (
                         <div ref={scrollRef} key={uuidv4()}>
@@ -111,7 +111,7 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                 })}
             </div>
             {/* 4. Input Footer */}
-            <form onSubmit={handleSendMsg} className="flex p-4 bg-slate-800 border-t border-slate-700">
+            <form onSubmit={handleSendMsg} className=" absolute w-full bottom-0 flex p-4 bg-slate-800 border-t border-slate-700">
                 <input 
                     type="text"
                     placeholder="Type your message..."
