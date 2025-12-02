@@ -96,7 +96,7 @@ function Chat() {
                         `}
                     >
                         {currentChat === undefined ? (
-                          <div>please login</div>
+                          <div>WelCome to the gupshup</div>
                         ) : (
                             <ScrollArea className="h-[90vh]">
                               <ChatContainer 
