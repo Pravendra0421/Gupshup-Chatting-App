@@ -82,7 +82,7 @@ useEffect(()=>{
                         `}
                     >
                         {currentUser && contact.length > 0 ? (
-                            <ScrollArea className="h-[90vh]">
+                            <ScrollArea className="h-screen">
                               <Contact
                                 contacts={contact} 
                                 currentUser={currentUser}
@@ -109,7 +109,7 @@ useEffect(()=>{
                         {currentChat === undefined ? (
                           <div><Welcome currentUser={currentUser}/></div>
                         ) : (
-                            <ScrollArea className="h-[90vh]">
+                            <ScrollArea className="h-screen">
                               <ChatContainer 
                                 currentChat={currentChat} 
                                 currentUser={currentUser} 

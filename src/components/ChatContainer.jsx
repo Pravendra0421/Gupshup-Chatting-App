@@ -91,7 +91,7 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                 {/* More options (Future: Video call, Logout) */}
             </div>
             {/* 3. Message Area (Scrollable History) */}
-            <div className="grow p-4 overflow-y-auto  space-y-2 custom-scrollbar">
+            <div className="grow p-4 overflow-y-auto  space-y-2 custom-scrollbar mb-20 mt-18">
                 {messages.map((message) => {
                     return (
                         <div ref={scrollRef} key={uuidv4()}>
