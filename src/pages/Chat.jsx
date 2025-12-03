@@ -88,6 +88,7 @@ useEffect(()=>{
                                 currentUser={currentUser}
                                 changeChat={handleChatChange}
                                 onlineUsers ={onlineUser}
+                                socket={socket}
                             />
                             </ScrollArea>
                         ) : (

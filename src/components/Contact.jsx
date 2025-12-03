@@ -1,8 +1,11 @@
 import React,{useState,useEffect} from "react";
-const Contact =({contacts,currentUser,changeChat,onlineUsers=[]})=>{
+import { Logout } from "@/services/AuthServices";
+import { useNavigate } from "react-router-dom";
+const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket})=>{
     const [currentUserName,setCurrentUserName] = useState(undefined);
     const [currentUserImage,setCurrentUserImage] = useState(undefined);
     const [currentSelected,setcurrentSelected] = useState(undefined);
+    const navigate = useNavigate();
     useEffect(()=>{
         if(currentUser && currentUser.userName && currentUser.avatarImage){
             setCurrentUserName(currentUser.userName);
@@ -12,6 +15,14 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[]})=>{
     const changeCurrentChat =(index,contact)=>{
         setcurrentSelected(index);
         changeChat(contact);
+    }
+    const handleLogout =async()=>{
+        await Logout();
+        if(socket.current){
+            socket.current.emit("logout",currentUser._id);
+        }
+        localStorage.clear();
+        navigate("/login");
     }
     console.log("current username",currentUser.userName);
     const currentname = currentUser.userName;
@@ -71,7 +82,7 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[]})=>{
                         </div>
                     </div>  
                     <button 
-                            // onClick={handleLogout} // Future logout function
+                            onClick={handleLogout} // Future logout function
                             className="p-2 text-red-400 hover:bg-slate-700 rounded-full transition-colors"
                             title="Logout"
                         >

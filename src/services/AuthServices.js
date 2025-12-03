@@ -11,3 +11,6 @@ export const GetAllUser = async()=>{
     const response = await AxiosInit.get('all-user');
     return response.data;
 }
+export const Logout = async()=>{
+    const response = await AxiosInit.get('logout');
+}
