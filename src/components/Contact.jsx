@@ -29,13 +29,13 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket})=>{
     console.log("currentname",currentname);
     return(
         <>
-            <div className="flex flex-col h-full bg-slate-800 text-white md:p-4">
-                <div className="flex items-center justify-center p-4 border-b border-teal-700 bg-teal-600 md:bg-transparent">
-                        <h1 className="text-2xl font-bold tracking-wider text-white">
-                            GupShup
-                        </h1>
+            <div className="flex flex-col h-full bg-slate-800 text-white border-r border-slate-700">
+                <div className="flex items-center justify-center p-5 bg-slate-900 border-b border-slate-700">
+                <h1 className="text-2xl font-bold tracking-widest text-teal-400 uppercase">
+                    GupShup
+                </h1>
                 </div>
-                <div>
+                <div className="flex-grow overflow-y-auto p-3 space-y-2 custom-scrollbar">
                     {contacts.map((contact,index)=>{
                         const isSelected = index === currentSelected;
                         const isOnline =onlineUsers.includes(contact._id);
@@ -44,12 +44,12 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket})=>{
                             <div
                                     key={contact._id}
                                     className={`
-                                        flex items-center gap-3 p-3 mt-5 rounded-lg cursor-pointer transition-all duration-200
-                                        ${isSelected ? "bg-teal-700 shadow-md scale-[1.01]" : "hover:bg-slate-700"}
-                                    `}
+                                flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all duration-300
+                                ${isSelected ? "bg-teal-600 shadow-lg" : "bg-slate-700 hover:bg-slate-600"}
+                            `}
                                     onClick={() => changeCurrentChat(index, contact)}
                                 >
-                                    <div className="h-10 w-10 shrink-0">
+                                    <div className="relative h-12 w-12 flex-shrink-0">
                                         <img 
                                             src={contact.avatarImage ? `data:image/svg+xml;base64,${contact.avatarImage}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                                             alt="avatar" 
@@ -59,37 +59,50 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket})=>{
                                             <span className="absolute left-10  h-3 w-3 rounded-full bg-green-500 border-2 border-slate-800"></span>
                                         )}
                                     </div>
-                                    <div > 
-                                        <h3 className="text-base font-semibold truncate">{contact.userName}</h3>
-                                    </div>
+                                    <div className=" md:block overflow-hidden">
+                                <h3 className="text-base font-medium truncate capitalize text-slate-100">
+                                    {contact.userName}
+                                </h3>
+                            </div>
                             </div>
                         )
                     })}
                 </div>
                 
-            {currentname &&(
-                <div className="absolute bottom-0 flex items-center w-full rounded-2xl p-3 border-t border-slate-700 bg-slate-900 justify-between">
-                    <div className="flex items-center gap-3"> 
-                        <div className=" h-10 w-10">
-                            <img 
-                                    src={`data:image/svg+xml;base64,${currentUserImage}`} 
-                                    alt="User Avatar"
-                                    className="rounded-full h-full w-full object-cover border-2 border-teal-500"
-                            />
+            {currentname && (
+                <div className="absolute bottom-8 w-full p-4 bg-slate-900 border-t border-slate-700">
+                    <div className="flex items-center justify-between bg-slate-800 rounded-xl p-3 shadow-md">
+                        
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="h-10 w-10 flex-shrink-0">
+                                <img
+                                    src={`data:image/svg+xml;base64,${currentUserImage}`}
+                                    alt="User"
+                                    className="rounded-full h-full w-full object-cover border border-teal-400"
+                                />
+                            </div>
+                            <div className="hidden md:block truncate">
+                                <h2 className="text-sm font-bold text-white capitalize truncate max-w-[100px]">
+                                    {currentUserName}
+                                </h2>
+                                <p className="text-xs text-teal-400">Online</p>
+                            </div>
                         </div>
-                        <div className=" sm:block">
-                                <h2 className="text-lg font-bold text-teal-400">{currentname}</h2>
-                        </div>
-                    </div>  
-                    <button 
-                            onClick={handleLogout} // Future logout function
-                            className="p-2 text-red-400 hover:bg-slate-700 rounded-full transition-colors"
+
+                        <button
+                            onClick={handleLogout}
+                            className="p-2 bg-slate-700 hover:bg-red-500 hover:text-white rounded-lg transition-all duration-300 group"
                             title="Logout"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-                        </button> 
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400 group-hover:text-white">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" x2="9" y1="12" y2="12"></line>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-          )}  
+            )}
             </div>
         </>
     )
