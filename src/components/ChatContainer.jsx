@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { GetMessageServices,sendMessageServices } from "../services/MessageServices";
 import { v4 as uuidv4 } from "uuid";
 import { useSocket } from "../context/SocketContext";
+import { IoCheckmarkDone,IoCheckmark } from "react-icons/io5";
 const ChatContainer =({currentChat,onBack,currentUser})=>{
     // const [message,setMessage] = useState([]);
     // State to hold the text the user is typing
@@ -24,6 +25,15 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
         }
         fetchData();
     },[currentChat]);
+    useEffect(()=>{
+        if(socket){
+            socket.on("message-read",(readerId)=>{
+                if(currentChat && currentChat._id === readerId){
+                    setMessages((prev)=>prev.map((msg)=>({...msg,fromSelf:true,read:true})))
+                }
+            })
+        }
+    })
     console.log(currentUser);
     console.log("messages",messages);
     console.log("msg",msg);
@@ -104,6 +114,11 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                                     }
                                 `}>
                                     <p>{message.message}</p>
+                                    {message.fromSelf && (
+                                        <span className={`text-xs flex items-end mb-1 ${message.read ? "text-blue-300" : "text-gray-300"}`}>
+                                            <IoCheckmarkDone size={16} />
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>

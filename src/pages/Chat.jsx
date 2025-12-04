@@ -6,12 +6,14 @@ import Contact from "../components/Contact.jsx";
 import ChatContainer from "../components/ChatContainer.jsx";
 import { ToastContainer } from "react-toastify";
 import Welcome from "./Welcome";
+import { getUnreadCounts,markMessageRead } from "@/services/MessageServices";
 import { ScrollArea } from "@/components/ui/scroll-area";
 function Chat() {
   const socket = useSocket();
   const navigate = useNavigate();
   const [currentUser,setCurrentUser] = useState(undefined);
   const [loadingContacts, setLoadingContacts] = useState(false);
+  const [unreadCounts,setUnreadCounts] = useState({});
   const [onlineUser,setOnlineUser]= useState([]);
   const [currentChat,setCurrentChat] = useState(undefined);
   const [isContactListVisible, setIsContactListVisible] = useState(true);
@@ -27,6 +29,17 @@ function Chat() {
     }
     fetchUser();
   },[navigate]);
+  useEffect(()=>{
+    const fetchCount = async()=>{
+      if(currentUser){
+        const data = await getUnreadCounts();
+        if(data.success){
+          setUnreadCounts(data.counts);
+        }
+      }
+    }
+    fetchCount();
+  },[currentUser])
   useEffect(() => {
     // Only run if we have a user AND a socket
     if (currentUser && socket) {
@@ -59,9 +72,32 @@ useEffect(()=>{
       getAllUSer();
   },[currentUser]);
   console.log(loadingContacts);
-  const handleChatChange = (chat) => {
+  useEffect(()=>{
+    if(socket){
+      socket.on('msg-reciever',(data)=>{
+        if(currentChat?._id !== data.from){
+          setUnreadCounts((prev)=>({
+            ...prev,[data.from]:(prev[data.from] || 0)+1
+          }));
+        }else{
+          markMessageRead(data.from);
+        }
+      })
+    }
+  },[socket,currentChat]);
+  const handleChatChange = async(chat) => {
         setCurrentChat(chat);
         setIsContactListVisible(false);
+        if(unreadCounts[chat._id]>0){
+          setUnreadCounts((prev)=>({...prev,[chat._id]:0}));
+          await markMessageRead(chat._id);
+          if(socket){
+            socket.emit("mark-read",{
+              senderId:chat._id,
+              readerId:currentUser._id
+            });
+          }
+        }
     };
   console.log("currentuser",currentUser);
   console.log("allContact",contact);
@@ -89,6 +125,7 @@ useEffect(()=>{
                                 changeChat={handleChatChange}
                                 onlineUsers ={onlineUser}
                                 socket={socket}
+                                unreadCounts={unreadCounts}
                             />
                             </ScrollArea>
                         ) : (

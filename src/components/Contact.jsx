@@ -1,10 +1,11 @@
 import React,{useState,useEffect} from "react";
 import { Logout } from "@/services/AuthServices";
 import { useNavigate } from "react-router-dom";
-const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket})=>{
+const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket,unreadCounts={}})=>{
     const [currentUserName,setCurrentUserName] = useState(undefined);
     const [currentUserImage,setCurrentUserImage] = useState(undefined);
     const [currentSelected,setcurrentSelected] = useState(undefined);
+    console.log("unread counts",unreadCounts)
     const navigate = useNavigate();
     useEffect(()=>{
         if(currentUser && currentUser.userName && currentUser.avatarImage){
@@ -55,6 +56,9 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket})=>{
                                             alt="avatar" 
                                             className="rounded-full h-full w-full object-cover border-2 border-teal-400"
                                         />
+                                        {unreadCounts[contact._id]>0 &&(
+                                            <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-slate-800">{unreadCounts[contact._id]}</div>
+                                        )}
                                         {isOnline && (
                                             <span className="absolute left-10  h-3 w-3 rounded-full bg-green-500 border-2 border-slate-800"></span>
                                         )}
