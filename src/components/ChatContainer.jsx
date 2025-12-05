@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { GetMessageServices,sendMessageServices } from "../services/MessageServices";
+import { GetMessageServices,sendMessageServices,markMessageRead } from "../services/MessageServices";
 import { v4 as uuidv4 } from "uuid";
 import { useSocket } from "../context/SocketContext";
 import { IoCheckmarkDone,IoCheckmark } from "react-icons/io5";
@@ -10,7 +10,7 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
     const [msg, setMsg] = useState("");
     const scrollRef = useRef();
     const socket = useSocket();
-    const [arrivalMessage,setArrivalMesaage] =useState(null);
+    const [arrivalMessage,setArrivalMessage] =useState(null);
     console.log("current user",currentUser._id);
     console.log("current chat",currentChat._id);
     useEffect(()=>{
@@ -25,15 +25,23 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
         }
         fetchData();
     },[currentChat]);
-    useEffect(()=>{
-        if(socket){
-            socket.on("message-read",(readerId)=>{
-                if(currentChat && currentChat._id === readerId){
-                    setMessages((prev)=>prev.map((msg)=>({...msg,fromSelf:true,read:true})))
+    useEffect(() => {
+        if (socket) {
+            socket.on("message-read", (readerId) => {
+                if (currentChat && currentChat._id === readerId) {
+                    setMessages((prev) => 
+                        prev.map((msg) => 
+                            msg.fromSelf ? { ...msg, read: true } : msg
+                        )
+                    );
                 }
-            })
+            });
         }
-    })
+        // Cleanup listener
+        return () => {
+            if (socket) socket.off("message-read");
+        };
+    }, [socket, currentChat]);
     console.log(currentUser);
     console.log("messages",messages);
     console.log("msg",msg);
@@ -50,22 +58,44 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                 from:currentUser._id,
                 msg,
             })
-            const msgs = [...messages];
-            msgs.push({ fromSelf: true, message: msg });
-            setMessages(msgs);
+            const newMsg = { 
+                fromSelf: true, 
+                message: msg, 
+                read: false
+            };
+            
+            setMessages((prev) => [...prev, newMsg]);
             setMsg("");
         }
     };
-    useEffect(()=>{
-        if(socket){
-            socket.on("msg-recieve",(data)=>{
-                console.log("🔥 INCOMING DATA TYPE:", typeof data);
-                console.log("🔥 INCOMING DATA:", data);
-                const incomingText = typeof data === 'object' ? data.message:data;
-                setArrivalMesaage({fromSelf:false,message:incomingText})
-            });
+    useEffect(() => {
+        if (socket) {
+            const handleMessage = async (data) => {
+                const incomingText = typeof data === 'object' ? data.message : data;
+                const senderId = data.from; // We need to know who sent it
+
+                // 1. Add to my list
+                setArrivalMessage({ 
+                    fromSelf: false, 
+                    message: incomingText,
+                    read: false 
+                });
+                if (currentChat && currentChat._id === senderId) {
+                    await markMessageRead(senderId);
+                    socket.emit("mark-read", {
+                        senderId: senderId,
+                        readerId: currentUser._id
+                    });
+                }
+            };
+
+            socket.on("msg-recieve", handleMessage);
+
+            return () => {
+                socket.off("msg-recieve", handleMessage);
+            };
         }
-    },[socket]);
+    }, [socket, currentChat])
     useEffect(()=>{
         arrivalMessage && setMessages((prev)=>[...prev,arrivalMessage]);
     },[arrivalMessage]);
