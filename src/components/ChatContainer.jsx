@@ -6,13 +6,49 @@ import { IoCheckmarkDone,IoCheckmark } from "react-icons/io5";
 const ChatContainer =({currentChat,onBack,currentUser})=>{
     // const [message,setMessage] = useState([]);
     // State to hold the text the user is typing
+    const [isTyping,setIsTyping]=useState(false);
     const [messages, setMessages] = useState([]); 
     const [msg, setMsg] = useState("");
     const scrollRef = useRef();
     const socket = useSocket();
     const [arrivalMessage,setArrivalMessage] =useState(null);
-    console.log("current user",currentUser._id);
-    console.log("current chat",currentChat._id);
+    const typingTimeoutRef = useRef(null);
+    useEffect(()=>{
+        if(socket){
+            socket.on("typing",(senderId)=>{
+                if(currentChat && currentChat._id === senderId){
+                    setIsTyping(true);
+                }
+            });
+            socket.on("stop-typing",(senderId)=>{
+                if(currentChat && currentChat._id === senderId){
+                    setIsTyping(false);
+                }
+            });
+        }
+        return ()=>{
+            if(socket){
+                socket.off("typing");
+                socket.off("stop-typing")
+            }
+        }
+    },[socket,currentChat])
+    const handleTyping =(e)=>{
+        setMsg(e.target.value);
+        if(socket){
+            socket.emit("typing",{
+                to:currentChat._id,
+                from:currentUser._id
+            });
+            if(typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current =setTimeout(()=>{
+                socket.emit("stop-typing",{
+                    to:currentChat._id,
+                    from:currentUser._id
+                })
+            },2000);
+        }
+    }
     useEffect(()=>{
         const fetchData = async()=>{
             if(currentChat){
@@ -157,11 +193,16 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
             </div>
             {/* 4. Input Footer */}
             <form onSubmit={handleSendMsg} className=" absolute w-full bottom-0 flex p-4 bg-slate-800 border-t border-slate-700">
+                {isTyping && (
+                    <div className="px-6 py-2 text-sm text-teal-400 italic animate-pulse">
+                        is typing...
+                    </div>
+                )}
                 <input 
                     type="text"
                     placeholder="Type your message..."
                     value={msg}
-                    onChange={(e) => setMsg(e.target.value)}
+                    onChange={handleTyping}
                     className="grow p-3 rounded-full bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-teal-400"
                 />
                 <button 
@@ -169,7 +210,6 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                     className="ml-3 p-3 rounded-full bg-teal-600 hover:bg-teal-700 transition-colors disabled:opacity-50"
                     disabled={!msg.trim()}
                 >
-                    {/* Send Icon (Replace with actual icon library later) */}
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
             </form>
