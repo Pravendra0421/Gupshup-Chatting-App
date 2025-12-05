@@ -148,6 +148,7 @@ useEffect(()=>{
                               <ChatContainer 
                                 currentChat={currentChat} 
                                 currentUser={currentUser} 
+                                onlineUsers ={onlineUser}
                                 // Prop for mobile back button
                                 onBack={() => setIsContactListVisible(true)} 
                             />

@@ -3,7 +3,7 @@ import { GetMessageServices,sendMessageServices,markMessageRead } from "../servi
 import { v4 as uuidv4 } from "uuid";
 import { useSocket } from "../context/SocketContext";
 import { IoCheckmarkDone,IoCheckmark } from "react-icons/io5";
-const ChatContainer =({currentChat,onBack,currentUser})=>{
+const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[]})=>{
     // const [message,setMessage] = useState([]);
     // State to hold the text the user is typing
     const [isTyping,setIsTyping]=useState(false);
@@ -78,6 +78,7 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
             if (socket) socket.off("message-read");
         };
     }, [socket, currentChat]);
+    const inOnline = onlineUsers.includes(currentChat._id);
     console.log(currentUser);
     console.log("messages",messages);
     console.log("msg",msg);
@@ -191,13 +192,31 @@ const ChatContainer =({currentChat,onBack,currentUser})=>{
                     );
                 })}
             </div>
+            {inOnline &&(
+                <div className="absolute bottom-[80px] left-6 flex items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <img 
+                src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} 
+                alt="typing..." 
+                className="h-8 w-8 rounded-full border-2 border-slate-700 shadow-lg"
+            />
+        </div>
+            )}
+    {isTyping && (
+        <div className="absolute bottom-[80px] left-6 flex items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <img 
+                src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} 
+                alt="typing..." 
+                className="h-8 w-8 rounded-full border-2 border-slate-700 shadow-lg"
+            />
+            <div className="bg-slate-700 px-4 py-2 rounded-2xl rounded-bl-none shadow-lg flex items-center gap-1">
+                <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
+            </div>
+        </div>
+    )}
             {/* 4. Input Footer */}
             <form onSubmit={handleSendMsg} className=" absolute w-full bottom-0 flex p-4 bg-slate-800 border-t border-slate-700">
-                {isTyping && (
-                    <div className="px-6 py-2 text-sm text-teal-400 italic animate-pulse">
-                        is typing...
-                    </div>
-                )}
                 <input 
                     type="text"
                     placeholder="Type your message..."
