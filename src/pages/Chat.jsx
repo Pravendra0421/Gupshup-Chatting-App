@@ -99,8 +99,6 @@ useEffect(()=>{
           }
         }
     };
-  console.log("currentuser",currentUser);
-  console.log("allContact",contact);
   return (
     <div className="h-screen w-screen flex  flex-col justify-center items-center bg-slate-900 sm:p-4">
             <div className="w-full h-full  sm:w-[95vw] md:w-[80vw] lg:w-full bg-slate-800 rounded-xl shadow-2xl overflow-hidden">
