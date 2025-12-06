@@ -160,7 +160,7 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[],onStartMovi
                             className="rounded-full h-full w-full object-cover border border-teal-500"
                         />
                     </div>
-                    <h3 className="text-xl font-semibold sm:hidden text-white">{currentChat.userName}</h3>
+                    {/* <h3 className="text-xl font-semibold hi text-white">{currentChat.userName}</h3> */}
                     <div className="h-10 w-10 shrink-0">
                         <button 
                             onClick={onStartMovie}
