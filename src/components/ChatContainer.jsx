@@ -78,7 +78,7 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[],onStartMovi
             if (socket) socket.off("message-read");
         };
     }, [socket, currentChat]);
-    const inOnline = onlineUsers.includes(currentChat._id);
+    const inOnline = onlineUsers?.includes(currentChat._id);
     const handleSendMsg=async(event)=>{
         event.preventDefault();
         if(msg.length>0){

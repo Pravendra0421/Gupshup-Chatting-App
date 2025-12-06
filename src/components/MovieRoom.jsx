@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Peer from "simple-peer";
 import { useSocket } from "../context/SocketContext";
 import styled, { keyframes } from "styled-components";
-import { IoMdMic, IoMdMicOff, IoMdExpand, IoMdClose } from "react-icons/io";
+import { IoMdMic, IoMdMicOff, IoMdExpand } from "react-icons/io";
 
 // --- ANIMATION FOR FLOATING CHAT ---
 const floatDown = keyframes`
@@ -13,7 +13,6 @@ const floatDown = keyframes`
 
 const FloatingMsg = styled.div`
   position: absolute;
-  left: 20px; /* Or dynamic random left */
   top: 50px;
   background: rgba(0, 0, 0, 0.6);
   color: white;
@@ -23,89 +22,94 @@ const FloatingMsg = styled.div`
   font-weight: bold;
   animation: ${floatDown} 5s linear forwards;
   pointer-events: none;
+  z-index: 100; /* Ensure it floats ON TOP */
 `;
 
-const MovieRoom = ({ currentUser, currentChat, exitMovieMode }) => {
+// Accept 'isHost' prop to decide logic path
+const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
     const socket = useSocket();
     
     // States
-    const [stream, setStream] = useState(null); // My Combined Stream
+    const [stream, setStream] = useState(null); // Local Stream (Host) or Remote Stream (Viewer)
     const [receivingCall, setReceivingCall] = useState(false);
     const [callerSignal, setCallerSignal] = useState(null);
     const [callAccepted, setCallAccepted] = useState(false);
-    const [isFullScreen, setIsFullScreen] = useState(false);
     const [micOn, setMicOn] = useState(true);
-    
-    // Floating Chat Messages State
     const [floatingMessages, setFloatingMessages] = useState([]);
 
     // Refs
-    const myVideo = useRef();
-    const userVideo = useRef();
+    const myVideo = useRef();    // Host's Video Element
+    const userVideo = useRef();  // Viewer's Video Element
     const connectionRef = useRef();
     const containerRef = useRef();
 
-    // --- 1. LISTEN FOR INCOMING CALLS ---
+    // --- 1. SOCKET LISTENERS & HANDSHAKE LOGIC ---
     useEffect(() => {
-        if(socket){
-            socket.on("call-user", (data) => {
-                // Only accept if it's from the person I'm chatting with
-                if(data.from === currentChat._id) {
-                    setReceivingCall(true);
-                    setCallerSignal(data.signal);
-                }
-            });
+        if (!socket) return;
 
-            // Listen for chat messages to float them
-            socket.on("msg-recieve", (data) => {
-                const text = typeof data === 'object' ? data.message : data;
-                addFloatingMessage(text);
+        // A. HOST LOGIC: Wait for Viewer to join, then start Peer
+        if (isHost) {
+            socket.on("viewer-joined", () => {
+                console.log("👀 Viewer joined! Starting Stream...");
+                initializeHostPeer(); 
+            });
+        } 
+        // B. VIEWER LOGIC: Tell Host I am ready immediately
+        else {
+            console.log("👋 Joining Party...");
+            socket.emit("party-joined", { 
+                to: currentChat._id, 
+                from: currentUser._id 
             });
         }
-        // Cleanup handled by parent unmount usually
-    }, [socket, currentChat]);
 
-    const addFloatingMessage = (msg) => {
-        const id = Date.now();
-        setFloatingMessages((prev) => [...prev, { id, text: msg }]);
-        // Cleanup message from array after 5 sec to save memory
-        setTimeout(() => {
-            setFloatingMessages((prev) => prev.filter(m => m.id !== id));
-        }, 5000);
-    };
+        // C. SIGNALING LISTENERS (For both)
+        socket.on("call-user", (data) => {
+            // Viewer receives Offer from Host
+            setReceivingCall(true);
+            setCallerSignal(data.signal);
+        });
 
-    // --- 2. START HOSTING (Screen + Mic) ---
-    const startHosting = async () => {
+        socket.on("call-accepted", (signal) => {
+            // Host receives Answer from Viewer
+            setCallAccepted(true);
+            connectionRef.current?.signal(signal);
+        });
+
+        // D. CHAT MESSAGES LISTENER
+        socket.on("msg-recieve", (data) => {
+            const text = typeof data === 'object' ? data.message : data;
+            addFloatingMessage(text);
+        });
+
+        return () => {
+            socket.off("viewer-joined");
+            socket.off("call-user");
+            socket.off("call-accepted");
+            socket.off("msg-recieve");
+            // Important: Destroy peer on unmount
+            if(connectionRef.current) connectionRef.current.destroy();
+        };
+    }, [socket, currentChat, isHost]); // Depend on isHost
+
+    // --- 2. HOST: INITIALIZE PEER (Send Offer) ---
+    const initializeHostPeer = async () => {
         try {
-            // A. Get Screen (Video + System Audio)
-            const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
-                video: { cursor: "always" }, 
-                audio: true // User MUST tick "Share Tab Audio"
-            });
+            // Get Screen (Movie + Audio)
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
+            
+            // Get Mic (Voice)
+            const voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
-            // B. Get Mic (Voice)
-            const voiceStream = await navigator.mediaDevices.getUserMedia({ 
-                audio: true, video: false 
-            });
-
-            // C. Mix Streams
+            // Mix Streams
             const mixedStream = new MediaStream();
-            mixedStream.addTrack(screenStream.getVideoTracks()[0]); // Video
-            
-            if(screenStream.getAudioTracks().length > 0)
-                mixedStream.addTrack(screenStream.getAudioTracks()[0]); // Movie Audio
-            
-            if(voiceStream.getAudioTracks().length > 0)
-                mixedStream.addTrack(voiceStream.getAudioTracks()[0]); // Mic Audio
+            screenStream.getTracks().forEach(track => mixedStream.addTrack(track));
+            voiceStream.getTracks().forEach(track => mixedStream.addTrack(track));
 
             setStream(mixedStream);
             if(myVideo.current) myVideo.current.srcObject = mixedStream;
-            socket.emit("notify-watch-party",{
-                to:currentChat._id,
-                from:currentChat._id,
-                userName:currentChat.userName
-            });
-            // D. Initiate Peer Connection
+
+            // Create Peer (Initiator = True)
             const peer = new Peer({
                 initiator: true,
                 trickle: false,
@@ -120,32 +124,28 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode }) => {
                 });
             });
 
+            // If Viewer sends their audio back
             peer.on("stream", (remoteStream) => {
-                // If viewer speaks, we hear them here
                 if(userVideo.current) userVideo.current.srcObject = remoteStream;
-            });
-
-            socket.on("call-accepted", (signal) => {
-                setCallAccepted(true);
-                peer.signal(signal);
             });
 
             connectionRef.current = peer;
 
         } catch (err) {
-            console.error("Screen Share Failed:", err);
+            console.error("Stream Error:", err);
+            exitMovieMode(); 
         }
     };
 
-    // --- 3. JOIN WATCH PARTY (Viewer Logic) ---
-    const joinWatchParty = async () => {
+    // --- 3. VIEWER: ANSWER CALL (Send Answer) ---
+    // Triggered automatically when signal arrives OR via button (if you prefer)
+    // Here we trigger via Button for better UX ("Accept Stream")
+    const answerCall = async () => {
         setCallAccepted(true);
         
-        // Viewer only sends Audio (Voice Chat)
-        const viewerStream = await navigator.mediaDevices.getUserMedia({ 
-            audio: true, video: false 
-        });
-        setStream(viewerStream); // Save reference to toggle mic later
+        // Viewer sends only Voice
+        const viewerStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        setStream(viewerStream); // Save ref for mic toggle
 
         const peer = new Peer({
             initiator: false,
@@ -158,7 +158,7 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode }) => {
         });
 
         peer.on("stream", (hostStream) => {
-            // Show Host's Movie + Audio
+            // Show Host's Movie
             if(userVideo.current) userVideo.current.srcObject = hostStream;
         });
 
@@ -166,15 +166,27 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode }) => {
         connectionRef.current = peer;
     };
 
-    // --- UTILS ---
+    // --- 4. UTILS ---
+    const addFloatingMessage = (msg) => {
+        const id = Date.now();
+        setFloatingMessages((prev) => [...prev, { id, text: msg }]);
+        setTimeout(() => setFloatingMessages((prev) => prev.filter(m => m.id !== id)), 5000);
+    };
+
     const toggleFullScreen = () => {
         if (!document.fullscreenElement) {
             containerRef.current.requestFullscreen();
-            setIsFullScreen(true);
         } else {
             document.exitFullscreen();
-            setIsFullScreen(false);
         }
+    };
+
+    const sendNotification = () => {
+        socket.emit("notify-watch-party", {
+            to: currentChat._id,
+            from: currentUser._id,
+            userName: currentUser.userName
+        });
     };
 
     return (
@@ -183,65 +195,77 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode }) => {
             {/* --- VIDEO AREA --- */}
             <div className="w-full h-full relative flex items-center justify-center">
                 
-                {/* Case 1: I am Host (Show my own screen muted locally) */}
-                {stream && !receivingCall && (
+                {/* HOST VIEW: My Screen */}
+                {isHost && stream && (
                     <video ref={myVideo} muted autoPlay playsInline className="w-full h-full object-contain" />
                 )}
 
-                {/* Case 2: I am Viewer (Show Host's stream) */}
-                {callAccepted && !stream?.getVideoTracks().length && (
+                {/* VIEWER VIEW: Host's Screen */}
+                {!isHost && callAccepted && (
                     <video ref={userVideo} autoPlay playsInline className="w-full h-full object-contain" />
                 )}
 
-                {/* Case 3: Empty State */}
-                {!stream && !callAccepted && !receivingCall && (
+                {/* WAITING UI (Host) */}
+                {isHost && !stream && (
                     <div className="text-center">
                         <h1 className="text-3xl text-white font-bold mb-4">Movie Night 🍿</h1>
-                        <p className="text-gray-400 mb-6">Share your screen and watch together.</p>
-                        <button onClick={startHosting} className="bg-teal-600 px-6 py-3 rounded-full text-white font-bold hover:bg-teal-500 transition shadow-lg">
-                            Start Sharing Screen
+                        <button onClick={sendNotification} className="bg-teal-600 px-6 py-3 rounded-full text-white font-bold hover:bg-teal-500 transition shadow-lg">
+                            Invite Friend to Watch
                         </button>
+                        <p className="text-gray-400 mt-4 animate-pulse">Waiting for them to join...</p>
                     </div>
                 )}
 
-                {/* Case 4: Incoming Call UI */}
-                {receivingCall && !callAccepted && (
+                {/* INCOMING CALL UI (Viewer) */}
+                {!isHost && receivingCall && !callAccepted && (
                     <div className="absolute z-50 bg-slate-800 p-6 rounded-xl shadow-2xl text-center border border-teal-500 animate-pulse">
-                        <h2 className="text-xl text-white mb-4">{currentChat.userName} started a Movie!</h2>
-                        <button onClick={joinWatchParty} className="bg-green-600 px-6 py-2 rounded-full text-white font-bold">
-                            Join Now
+                        <h2 className="text-xl text-white mb-4">Ready to Watch?</h2>
+                        <button onClick={answerCall} className="bg-green-600 px-6 py-2 rounded-full text-white font-bold">
+                            Join Stream
                         </button>
                     </div>
                 )}
 
-                {/* --- FLOATING CHAT OVERLAY --- */}
+                {/* WAITING UI (Viewer - before signal arrives) */}
+                {!isHost && !receivingCall && !callAccepted && (
+                    <div className="text-white text-xl animate-bounce">
+                        Connecting to Party...
+                    </div>
+                )}
+
+                {/* FLOATING MESSAGES */}
                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
                     {floatingMessages.map((msg) => (
-                        <FloatingMsg key={msg.id} style={{ left: `${Math.random() * 80}%` }}>
+                        <FloatingMsg key={msg.id} style={{ left: `${Math.random() * 60 + 20}%` }}>
                             {msg.text}
                         </FloatingMsg>
                     ))}
                 </div>
             </div>
 
-            {/* --- CONTROLS BAR (Shows on hover or bottom) --- */}
-            {(stream || callAccepted) && (
+            {/* --- CONTROLS --- */}
+            {(callAccepted || (isHost && stream)) && (
                 <div className="absolute bottom-6 flex gap-4 bg-slate-900/80 p-3 rounded-2xl backdrop-blur-md z-50">
                     <button onClick={toggleFullScreen} className="text-white hover:text-teal-400 p-2">
                         <IoMdExpand size={24} />
                     </button>
                     <button 
                         onClick={() => {
-                            // Toggle Mic Logic
-                            stream.getAudioTracks().forEach(track => track.enabled = !micOn);
-                            setMicOn(!micOn);
+                            if(stream) {
+                                stream.getAudioTracks().forEach(track => track.enabled = !micOn);
+                                setMicOn(!micOn);
+                            }
                         }} 
                         className={`p-2 rounded-full ${micOn ? 'text-white' : 'text-red-500 bg-red-900/30'}`}
                     >
                         {micOn ? <IoMdMic size={24} /> : <IoMdMicOff size={24} />}
                     </button>
                     <button 
-                        onClick={exitMovieMode} 
+                        onClick={() => {
+                            // Cleanup before exit
+                            if(stream) stream.getTracks().forEach(track => track.stop());
+                            exitMovieMode();
+                        }} 
                         className="bg-red-600 text-white px-4 py-1 rounded-lg font-bold hover:bg-red-700"
                     >
                         Leave

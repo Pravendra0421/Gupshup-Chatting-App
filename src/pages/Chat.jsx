@@ -194,6 +194,7 @@ useEffect(()=>{
                           currentUser={currentUser}
                         currentChat={currentChat}
                         exitMovieMode={() => setIsMovieMode(false)}
+                        isHost={isHost}
                         />
                       ) : (
                         <ScrollArea className="h-screen">
