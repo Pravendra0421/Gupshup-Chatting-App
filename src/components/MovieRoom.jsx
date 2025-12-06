@@ -42,55 +42,64 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
     const userVideo = useRef();  // Viewer's Video Element
     const connectionRef = useRef();
     const containerRef = useRef();
-
     // --- 1. SOCKET LISTENERS & HANDSHAKE LOGIC ---
     useEffect(() => {
         if (!socket) return;
 
-        // A. HOST LOGIC: Wait for Viewer to join, then start Peer
-        if (isHost) {
-            socket.on("viewer-joined", () => {
-                console.log("👀 Viewer joined! Starting Stream...");
-                initializeHostPeer(); 
-            });
-        } 
-        // B. VIEWER LOGIC: Tell Host I am ready immediately
-        else {
-            console.log("👋 Joining Party...");
-            socket.emit("party-joined", { 
-                to: currentChat._id, 
-                from: currentUser._id 
-            });
-        }
+        // 1. Setup Listeners FIRST (Before doing anything else)
+        
+        // Host Listener
+        const handleViewerJoined = () => {
+            console.log("👀 Viewer joined! Starting Stream...");
+            initializeHostPeer(); 
+        };
 
-        // C. SIGNALING LISTENERS (For both)
-        socket.on("call-user", (data) => {
-            // Viewer receives Offer from Host
+        // Viewer Listener (Incoming Signal)
+        const handleCallUser = (data) => {
+            console.log("📞 Received Signal from Host");
             setReceivingCall(true);
             setCallerSignal(data.signal);
-        });
+        };
 
-        socket.on("call-accepted", (signal) => {
-            // Host receives Answer from Viewer
+        const handleCallAccepted = (signal) => {
             setCallAccepted(true);
             connectionRef.current?.signal(signal);
-        });
+        };
 
-        // D. CHAT MESSAGES LISTENER
-        socket.on("msg-recieve", (data) => {
+        const handleChatMsg = (data) => {
             const text = typeof data === 'object' ? data.message : data;
             addFloatingMessage(text);
-        });
+        };
+
+        socket.on("viewer-joined", handleViewerJoined);
+        socket.on("call-user", handleCallUser);
+        socket.on("call-accepted", handleCallAccepted);
+        socket.on("msg-recieve", handleChatMsg);
+
+        // 2. Trigger Logic AFTER Listeners are set
+        if (isHost) {
+            // Host just waits...
+        } else {
+            // Viewer announces presence
+            console.log("👋 Joining Party...");
+            // Small timeout ensures listeners are bound
+            setTimeout(() => {
+                socket.emit("party-joined", { 
+                    to: currentChat._id, 
+                    from: currentUser._id 
+                });
+            }, 500); 
+        }
 
         return () => {
-            socket.off("viewer-joined");
-            socket.off("call-user");
-            socket.off("call-accepted");
-            socket.off("msg-recieve");
-            // Important: Destroy peer on unmount
+            socket.off("viewer-joined", handleViewerJoined);
+            socket.off("call-user", handleCallUser);
+            socket.off("call-accepted", handleCallAccepted);
+            socket.off("msg-recieve", handleChatMsg);
+            
             if(connectionRef.current) connectionRef.current.destroy();
         };
-    }, [socket, currentChat, isHost]); // Depend on isHost
+    }, [socket, currentChat, isHost]);
 
     // --- 2. HOST: INITIALIZE PEER (Send Offer) ---
     const initializeHostPeer = async () => {
