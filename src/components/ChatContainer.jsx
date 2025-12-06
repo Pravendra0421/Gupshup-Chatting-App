@@ -4,8 +4,6 @@ import { v4 as uuidv4 } from "uuid";
 import { useSocket } from "../context/SocketContext";
 import { IoCheckmarkDone,IoCheckmark } from "react-icons/io5";
 const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[]})=>{
-    // const [message,setMessage] = useState([]);
-    // State to hold the text the user is typing
     const [isTyping,setIsTyping]=useState(false);
     const [messages, setMessages] = useState([]); 
     const [msg, setMsg] = useState("");
@@ -13,6 +11,7 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[]})=>{
     const socket = useSocket();
     const [arrivalMessage,setArrivalMessage] =useState(null);
     const typingTimeoutRef = useRef(null);
+    console.log("currentChat",currentChat);
     useEffect(()=>{
         if(socket){
             socket.on("typing",(senderId)=>{
@@ -79,9 +78,6 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[]})=>{
         };
     }, [socket, currentChat]);
     const inOnline = onlineUsers.includes(currentChat._id);
-    console.log(currentUser);
-    console.log("messages",messages);
-    console.log("msg",msg);
     const handleSendMsg=async(event)=>{
         event.preventDefault();
         if(msg.length>0){
@@ -109,9 +105,7 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[]})=>{
         if (socket) {
             const handleMessage = async (data) => {
                 const incomingText = typeof data === 'object' ? data.message : data;
-                const senderId = data.from; // We need to know who sent it
-
-                // 1. Add to my list
+                const senderId = data.from; 
                 setArrivalMessage({ 
                     fromSelf: false, 
                     message: incomingText,
@@ -158,9 +152,11 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[]})=>{
                 <div className="flex items-center gap-3">
                     <div className="h-10 w-10 shrink-0">
                         <img 
-                            src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} 
+                            src={
+                                currentChat.avatarImage ||""
+                            } 
                             alt="avatar" 
-                            className="rounded-full h-full w-full object-cover"
+                            className="rounded-full h-full w-full object-cover border border-teal-500"
                         />
                     </div>
                     <h3 className="text-xl font-semibold text-white">{currentChat.userName}</h3>
@@ -193,28 +189,28 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[]})=>{
                 })}
             </div>
             {inOnline &&(
-                <div className="absolute bottom-[80px] left-6 flex items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="absolute bottom-[80px] left-50 flex items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <img 
-                src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} 
+                src={currentChat.avatarImage || ""} 
                 alt="typing..." 
-                className="h-8 w-8 rounded-full border-2 border-slate-700 shadow-lg"
+                className="h-10 w-10 rounded-full border-2 border-slate-700 shadow-lg"
             />
         </div>
             )}
-    {isTyping && (
-        <div className="absolute bottom-[80px] left-6 flex items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <img 
-                src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} 
-                alt="typing..." 
-                className="h-8 w-8 rounded-full border-2 border-slate-700 shadow-lg"
-            />
-            <div className="bg-slate-700 px-4 py-2 rounded-2xl rounded-bl-none shadow-lg flex items-center gap-1">
-                <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
-            </div>
-        </div>
-    )}
+            {isTyping && (
+                <div className="absolute bottom-[80px] left-6 flex items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <img 
+                        src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} 
+                        alt="typing..." 
+                        className="h-8 w-8 rounded-full border-2 border-slate-700 shadow-lg"
+                    />
+                    <div className="bg-slate-700 px-4 py-2 rounded-2xl rounded-bl-none shadow-lg flex items-center gap-1">
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
+                    </div>
+                </div>
+            )}
             {/* 4. Input Footer */}
             <form onSubmit={handleSendMsg} className=" absolute w-full bottom-0 flex p-4 bg-slate-800 border-t border-slate-700">
                 <input 

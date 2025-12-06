@@ -1,11 +1,13 @@
 import React,{useState,useEffect} from "react";
 import { Logout } from "@/services/AuthServices";
-import { useNavigate } from "react-router-dom";
-const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket,unreadCounts={}})=>{
+import { Link, useNavigate } from "react-router-dom";
+const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket,unreadCounts={},profile})=>{
     const [currentUserName,setCurrentUserName] = useState(undefined);
     const [currentUserImage,setCurrentUserImage] = useState(undefined);
     const [currentSelected,setcurrentSelected] = useState(undefined);
     console.log("unread counts",unreadCounts)
+    console.log("profile",profile);
+    console.log("contact",contacts);
     const navigate = useNavigate();
     useEffect(()=>{
         if(currentUser && currentUser.userName && currentUser.avatarImage){
@@ -27,7 +29,6 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket,unreadCou
     }
     console.log("current username",currentUser.userName);
     const currentname = currentUser.userName;
-    console.log("currentname",currentname);
     return(
         <>
             <div className="flex flex-col h-full bg-slate-800 text-white border-r border-slate-700">
@@ -52,7 +53,7 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket,unreadCou
                                 >
                                     <div className="relative h-12 w-12 flex-shrink-0">
                                         <img 
-                                            src={contact.avatarImage ? `data:image/svg+xml;base64,${contact.avatarImage}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+                                            src={contact.avatarImage || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                                             alt="avatar" 
                                             className="rounded-full h-full w-full object-cover border-2 border-teal-400"
                                         />
@@ -77,21 +78,21 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket,unreadCou
                 <div className="absolute bottom-8 w-full p-4 bg-slate-900 border-t border-slate-700">
                     <div className="flex items-center justify-between bg-slate-800 rounded-xl p-3 shadow-md">
                         
-                        <div className="flex items-center gap-3 overflow-hidden">
+                        <Link to="/profile" className="flex items-center gap-3 overflow-hidden">
                             <div className="h-10 w-10 flex-shrink-0">
                                 <img
-                                    src={`data:image/svg+xml;base64,${currentUserImage}`}
+                                    src={profile.image}
                                     alt="User"
                                     className="rounded-full h-full w-full object-cover border border-teal-400"
                                 />
                             </div>
                             <div className="hidden md:block truncate">
                                 <h2 className="text-sm font-bold text-white capitalize truncate max-w-[100px]">
-                                    {currentUserName}
+                                    {profile.name}
                                 </h2>
                                 <p className="text-xs text-teal-400">Online</p>
                             </div>
-                        </div>
+                        </Link>
 
                         <button
                             onClick={handleLogout}

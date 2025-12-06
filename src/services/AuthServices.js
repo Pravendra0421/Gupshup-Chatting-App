@@ -13,4 +13,13 @@ export const GetAllUser = async()=>{
 }
 export const Logout = async()=>{
     const response = await AxiosInit.get('logout');
+    return response.data
+}
+export const setProfile =async(data)=>{
+    const response = await AxiosInit.put('profile',data);
+    return response.data;
+}
+export const getProfile = async()=>{
+    const response = await AxiosInit.get('getProfile');
+    return response.data;
 }

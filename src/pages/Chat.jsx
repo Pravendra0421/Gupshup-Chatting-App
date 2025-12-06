@@ -1,6 +1,6 @@
 import { useSocket } from "../context/SocketContext";
 import { useEffect, useState } from "react";
-import { GetAllUser } from "../services/AuthServices.js";
+import { GetAllUser, getProfile } from "../services/AuthServices.js";
 import { useNavigate } from "react-router-dom";
 import Contact from "../components/Contact.jsx";
 import ChatContainer from "../components/ChatContainer.jsx";
@@ -18,6 +18,7 @@ function Chat() {
   const [currentChat,setCurrentChat] = useState(undefined);
   const [isContactListVisible, setIsContactListVisible] = useState(true);
   const [contact,setContact] = useState([]);
+  const [Profile,setProfile] = useState(undefined);
   useEffect(()=>{
     const fetchUser =async()=>{
       if(!localStorage.getItem("chat-user")){
@@ -29,6 +30,13 @@ function Chat() {
     }
     fetchUser();
   },[navigate]);
+  useEffect(()=>{
+    const getProfileUser = async()=>{
+      const result = await getProfile();
+      setProfile(result);
+    }
+    getProfileUser();
+  },[]);
   useEffect(()=>{
     const fetchCount = async()=>{
       if(currentUser){
@@ -102,11 +110,7 @@ useEffect(()=>{
   return (
     <div className="h-screen w-screen flex  flex-col justify-center items-center bg-slate-900 sm:p-4">
             <div className="w-full h-full  sm:w-[95vw] md:w-[80vw] lg:w-full bg-slate-800 rounded-xl shadow-2xl overflow-hidden">
-                
-                {/* Main Grid: Contacts (25%) | Chat Window (75%) */}
                 <div className="grid h-full w-full grid-cols-1 md:grid-cols-4">
-
-                    {/* 1. CONTACTS LIST (Sidebar) */}
                     <div 
                         className={`
                             h-full overflow-y-auto transition-transform duration-300
@@ -124,6 +128,7 @@ useEffect(()=>{
                                 onlineUsers ={onlineUser}
                                 socket={socket}
                                 unreadCounts={unreadCounts}
+                                profile={Profile}
                             />
                             </ScrollArea>
                         ) : (
