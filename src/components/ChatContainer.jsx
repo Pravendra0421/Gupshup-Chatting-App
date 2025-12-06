@@ -160,7 +160,7 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[],onStartMovi
                             className="rounded-full h-full w-full object-cover border border-teal-500"
                         />
                     </div>
-                    <h3 className="text-xl font-semibold text-white">{currentChat.userName}</h3>
+                    <h3 className="text-xl font-semibold sm:hidden text-white">{currentChat.userName}</h3>
                     <div className="h-10 w-10 shrink-0">
                         <button 
                             onClick={onStartMovie}
@@ -171,9 +171,7 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[],onStartMovi
                         </button>
                     </div>
                 </div>
-                {/* More options (Future: Video call, Logout) */}
             </div>
-            {/* 3. Message Area (Scrollable History) */}
             <div className="grow p-4 overflow-y-auto  space-y-2 custom-scrollbar mb-20 mt-18">
                 {messages.map((message) => {
                     return (
