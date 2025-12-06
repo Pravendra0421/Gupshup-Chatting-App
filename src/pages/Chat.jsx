@@ -13,6 +13,7 @@ function Chat() {
   const socket = useSocket();
   const navigate = useNavigate();
   const [currentUser,setCurrentUser] = useState(undefined);
+  const [isHost, setIsHost] = useState(false);
   const [incomingParty, setIncomingParty] = useState(null);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [isMovieMode, setIsMovieMode] = useState(false);
@@ -22,6 +23,10 @@ function Chat() {
   const [isContactListVisible, setIsContactListVisible] = useState(true);
   const [contact,setContact] = useState([]);
   const [Profile,setProfile] = useState(undefined);
+  const startMovieMode = () => {
+        setIsHost(true);
+        setIsMovieMode(true);
+  };
   useEffect(()=>{
     const fetchUser =async()=>{
       if(!localStorage.getItem("chat-user")){
@@ -50,12 +55,10 @@ function Chat() {
     }
   }, [socket]);
   const acceptParty = () => {
-    // 1. Set Chat Mode to Movie
-    setIsMovieMode(true);
-    // 2. Clear Notification
-    setIncomingParty(null);
-    // 3. (Optional) Auto-trigger join logic inside MovieRoom
-  };
+        setIsHost(false);
+        setIsMovieMode(true);
+        setIncomingParty(null);
+    };
   useEffect(()=>{
     const fetchCount = async()=>{
       if(currentUser){
