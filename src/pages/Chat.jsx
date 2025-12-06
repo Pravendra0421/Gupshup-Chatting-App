@@ -47,13 +47,19 @@ function Chat() {
   },[]);
   useEffect(() => {
     if(socket) {
-        socket.on("incoming-watch-party", (data) => {
-            // Show popup
+        const handleIncomingParty = (data) => {
+            console.log("🎬 Received incoming-watch-party:", data); // Debug log
             setIncomingParty(data); 
-            // Optional: Play a ringtone sound here! 🔔
-        });
+        };
+        
+        socket.on("incoming-watch-party", handleIncomingParty);
+        
+        // Cleanup function
+        return () => {
+            socket.off("incoming-watch-party", handleIncomingParty);
+        };
     }
-  }, [socket]);
+}, [socket]);
   const acceptParty = () => {
         setIsHost(false);
         setIsMovieMode(true);
@@ -76,13 +82,19 @@ function Chat() {
         socket.emit("add-user", currentUser._id);
     }
 }, [currentUser, socket]);
-useEffect(()=>{
-  if(socket){
-    socket.on("online-users",(users)=>{
-      setOnlineUser(users);
-    })
+useEffect(() => {
+  if(socket) {
+      const handleOnlineUsers = (users) => {
+          setOnlineUser(users);
+      };
+      
+      socket.on("online-users", handleOnlineUsers);
+      
+      return () => {
+          socket.off("online-users", handleOnlineUsers);
+      };
   }
-})
+}, [socket]); // Add dependency array
   useEffect(()=>{
     const getAllUSer = async()=>{
       if(currentUser && currentUser._id){

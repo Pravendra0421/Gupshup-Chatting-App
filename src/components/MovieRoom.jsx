@@ -25,7 +25,6 @@ const FloatingMsg = styled.div`
   z-index: 100; /* Ensure it floats ON TOP */
 `;
 
-// Accept 'isHost' prop to decide logic path
 const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
     const socket = useSocket();
     
@@ -75,12 +74,8 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
         socket.on("call-user", handleCallUser);
         socket.on("call-accepted", handleCallAccepted);
         socket.on("msg-recieve", handleChatMsg);
-
-        // 2. Trigger Logic AFTER Listeners are set
         if (isHost) {
-            // Host just waits...
         } else {
-            // Viewer announces presence
             console.log("👋 Joining Party...");
             // Small timeout ensures listeners are bound
             setTimeout(() => {
@@ -146,9 +141,6 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
         }
     };
 
-    // --- 3. VIEWER: ANSWER CALL (Send Answer) ---
-    // Triggered automatically when signal arrives OR via button (if you prefer)
-    // Here we trigger via Button for better UX ("Accept Stream")
     const answerCall = async () => {
         setCallAccepted(true);
         
@@ -191,6 +183,7 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
     };
 
     const sendNotification = () => {
+        console.log("📤 Sending notify-watch-party to:", currentChat._id);
         socket.emit("notify-watch-party", {
             to: currentChat._id,
             from: currentUser._id,
