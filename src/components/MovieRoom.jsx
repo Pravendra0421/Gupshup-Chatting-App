@@ -100,7 +100,11 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode }) => {
 
             setStream(mixedStream);
             if(myVideo.current) myVideo.current.srcObject = mixedStream;
-
+            socket.emit("notify-watch-party",{
+                to:currentChat._id,
+                from:currentChat._id,
+                userName:currentChat.userName
+            });
             // D. Initiate Peer Connection
             const peer = new Peer({
                 initiator: true,

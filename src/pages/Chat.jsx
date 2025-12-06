@@ -13,6 +13,7 @@ function Chat() {
   const socket = useSocket();
   const navigate = useNavigate();
   const [currentUser,setCurrentUser] = useState(undefined);
+  const [incomingParty, setIncomingParty] = useState(null);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [isMovieMode, setIsMovieMode] = useState(false);
   const [unreadCounts,setUnreadCounts] = useState({});
@@ -39,6 +40,22 @@ function Chat() {
     }
     getProfileUser();
   },[]);
+  useEffect(() => {
+    if(socket) {
+        socket.on("incoming-watch-party", (data) => {
+            // Show popup
+            setIncomingParty(data); 
+            // Optional: Play a ringtone sound here! 🔔
+        });
+    }
+  }, [socket]);
+  const acceptParty = () => {
+    // 1. Set Chat Mode to Movie
+    setIsMovieMode(true);
+    // 2. Clear Notification
+    setIncomingParty(null);
+    // 3. (Optional) Auto-trigger join logic inside MovieRoom
+  };
   useEffect(()=>{
     const fetchCount = async()=>{
       if(currentUser){
@@ -112,6 +129,27 @@ useEffect(()=>{
   return (
     <div className="h-screen w-screen flex  flex-col justify-center items-center bg-slate-900 sm:p-4">
             <div className="w-full h-full  sm:w-[95vw] md:w-[80vw] lg:w-full bg-slate-800 rounded-xl shadow-2xl overflow-hidden">
+                {incomingParty && (
+        <div className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-slate-800 border-2 border-purple-500 p-6 rounded-xl shadow-2xl z-50 animate-bounce">
+            <h3 className="text-white text-lg font-bold">
+                🍿 {incomingParty.userName} started a Movie!
+            </h3>
+            <div className="flex gap-4 mt-4 justify-center">
+                <button 
+                    onClick={acceptParty}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700"
+                >
+                    Join Now
+                </button>
+                <button 
+                    onClick={() => setIncomingParty(null)}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700"
+                >
+                    Ignore
+                </button>
+            </div>
+        </div>
+    )}
                 <div className="grid h-full w-full grid-cols-1 md:grid-cols-4">
                     <div 
                         className={`
