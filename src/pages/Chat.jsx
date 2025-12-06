@@ -6,6 +6,7 @@ import Contact from "../components/Contact.jsx";
 import ChatContainer from "../components/ChatContainer.jsx";
 import { ToastContainer } from "react-toastify";
 import Welcome from "./Welcome";
+import MovieRoom from "@/components/MovieRoom.jsx";
 import { getUnreadCounts,markMessageRead } from "@/services/MessageServices";
 import { ScrollArea } from "@/components/ui/scroll-area";
 function Chat() {
@@ -13,6 +14,7 @@ function Chat() {
   const navigate = useNavigate();
   const [currentUser,setCurrentUser] = useState(undefined);
   const [loadingContacts, setLoadingContacts] = useState(false);
+  const [isMovieMode, setIsMovieMode] = useState(false);
   const [unreadCounts,setUnreadCounts] = useState({});
   const [onlineUser,setOnlineUser]= useState([]);
   const [currentChat,setCurrentChat] = useState(undefined);
@@ -138,28 +140,37 @@ useEffect(()=>{
                     </div>
 
                     {/* 2. CHAT WINDOW / WELCOME SCREEN */}
-                    <div 
-                        className={`
-                            h-full transition-transform duration-300 
-                            ${isContactListVisible ? 'hidden sm:block' : 'block'} 
-                            sm:w-full sm:col-span-1 
-                            md:col-span-3
-                        `}
-                    >
-                        {currentChat === undefined ? (
-                          <div><Welcome currentUser={currentUser}/></div>
-                        ) : (
-                            <ScrollArea className="h-screen">
-                              <ChatContainer 
-                                currentChat={currentChat} 
-                                currentUser={currentUser} 
-                                onlineUsers ={onlineUser}
-                                // Prop for mobile back button
-                                onBack={() => setIsContactListVisible(true)} 
-                            />
-                            </ScrollArea>
-                        )}
-                    </div>
+                    <div
+                    className={`
+                      h-full transition-transform duration-300 
+                      ${isContactListVisible ? 'hidden sm:block' : 'block'} 
+                      sm:w-full sm:col-span-1 
+                      md:col-span-3
+                    `}
+                  >
+                    {currentChat === undefined ? (
+                      <Welcome currentUser={currentUser} />
+                    ) : (
+                      isMovieMode ? (
+                        <MovieRoom 
+                          currentUser={currentUser}
+                        currentChat={currentChat}
+                        exitMovieMode={() => setIsMovieMode(false)}
+                        />
+                      ) : (
+                        <ScrollArea className="h-screen">
+                          <ChatContainer
+                            currentChat={currentChat}
+                            currentUser={currentUser}
+                            onlineUsers={onlineUser} // make sure this prop name & variable are correct
+                            onBack={() => setIsContactListVisible(true)}
+                            onStartMovie={() => setIsMovieMode(true)}
+                          />
+                        </ScrollArea>
+                      )
+                    )}
+                  </div>
+
                 </div>
             </div>
             <ToastContainer position="bottom-right" theme="dark" />

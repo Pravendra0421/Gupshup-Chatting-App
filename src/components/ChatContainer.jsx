@@ -3,7 +3,8 @@ import { GetMessageServices,sendMessageServices,markMessageRead } from "../servi
 import { v4 as uuidv4 } from "uuid";
 import { useSocket } from "../context/SocketContext";
 import { IoCheckmarkDone,IoCheckmark } from "react-icons/io5";
-const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[]})=>{
+import { BiCameraMovie } from "react-icons/bi";
+const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[],onStartMovie})=>{
     const [isTyping,setIsTyping]=useState(false);
     const [messages, setMessages] = useState([]); 
     const [msg, setMsg] = useState("");
@@ -160,6 +161,15 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[]})=>{
                         />
                     </div>
                     <h3 className="text-xl font-semibold text-white">{currentChat.userName}</h3>
+                    <div className="h-10 w-10 shrink-0">
+                        <button 
+                            onClick={onStartMovie}
+                            className="p-2 bg-slate-700 hover:bg-purple-600 rounded-full transition-colors text-purple-400 hover:text-white"
+                            title="Start Watch Party"
+                        >
+                            <BiCameraMovie size={24} />
+                        </button>
+                    </div>
                 </div>
                 {/* More options (Future: Video call, Logout) */}
             </div>
