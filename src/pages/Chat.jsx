@@ -1,3 +1,4 @@
+import React from "react";
 import { useSocket } from "../context/SocketContext";
 import { useEffect, useState } from "react";
 import { GetAllUser, getProfile } from "../services/AuthServices.js";
@@ -114,6 +115,25 @@ useEffect(() => {
       getAllUSer();
   },[currentUser]);
   console.log(loadingContacts);
+  const handleStartHosting = () => {
+    setIsHost(true);       // Main Host hu
+    setIsMovieMode(true);  // Room kholo
+
+    // Optional: Agar aap chahte hain ki host bante hi dusre ko notification jaye
+    if (socket && currentChat) {
+        socket.emit("start-watch-party", {
+            to: currentChat._id,
+            from: currentUser._id,
+            userName: currentUser.userName || "User"
+        });
+    }
+};
+
+// 👇 Ye function tab chalega jab banda "Join" select karega
+const handleJoinStream = () => {
+    setIsHost(false);      // Main Viewer hu
+    setIsMovieMode(true);  // Room kholo
+};
   useEffect(()=>{
     if(socket){
       socket.on('msg-reciever',(data)=>{
@@ -207,9 +227,9 @@ useEffect(() => {
                       isMovieMode ? (
                         <MovieRoom 
                           currentUser={currentUser}
-                        currentChat={currentChat}
-                        exitMovieMode={() => setIsMovieMode(false)}
-                        isHost={isHost}
+                          currentChat={currentChat}
+                          exitMovieMode={() => setIsMovieMode(false)}
+                          isHost={isHost}
                         />
                       ) : (
                         <ScrollArea className="h-screen">
@@ -218,7 +238,8 @@ useEffect(() => {
                             currentUser={currentUser}
                             onlineUsers={onlineUser} // make sure this prop name & variable are correct
                             onBack={() => setIsContactListVisible(true)}
-                            onStartMovie={() => setIsMovieMode(true)}
+                            onHostStart={handleStartHosting}
+                            onJoinStart={handleJoinStream}
                           />
                         </ScrollArea>
                       )

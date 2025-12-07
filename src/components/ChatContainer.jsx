@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { GetMessageServices,sendMessageServices,markMessageRead } from "../services/MessageServices";
 import { v4 as uuidv4 } from "uuid";
+import { BiPlay,BiShow } from "react-icons/bi";
 import { useSocket } from "../context/SocketContext";
 import { IoCheckmarkDone,IoCheckmark } from "react-icons/io5";
 import { BiCameraMovie } from "react-icons/bi";
-const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[],onStartMovie})=>{
+const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[],onHostStart,onJoinStart})=>{
     const [isTyping,setIsTyping]=useState(false);
-    const [messages, setMessages] = useState([]); 
+    const [messages, setMessages] = useState([]);
     const [msg, setMsg] = useState("");
     const scrollRef = useRef();
+    const [showMovieMenu, setShowMovieMenu] = useState(false);
     const socket = useSocket();
     const [arrivalMessage,setArrivalMessage] =useState(null);
     const typingTimeoutRef = useRef(null);
@@ -161,14 +163,51 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[],onStartMovi
                         />
                     </div>
                     {/* <h3 className="text-xl font-semibold hi text-white">{currentChat.userName}</h3> */}
-                    <div className="h-10 w-10 shrink-0">
+                    <div className="ml-auto relative">
+                        {/* Main Button */}
                         <button 
-                            onClick={onStartMovie}
-                            className="p-2 bg-slate-700 hover:bg-purple-600 rounded-full transition-colors text-purple-400 hover:text-white"
-                            title="Start Watch Party"
+                            onClick={() => setShowMovieMenu(!showMovieMenu)} // Toggle menu
+                            className={`p-2 rounded-full transition-colors ${showMovieMenu ? 'bg-purple-600 text-white' : 'bg-slate-700 text-purple-400 hover:text-white hover:bg-purple-600'}`}
+                            title="Watch Party Options"
                         >
                             <BiCameraMovie size={24} />
                         </button>
+
+                        {/* 👇 Dropdown Menu Logic */}
+                        {showMovieMenu && (
+                            <div className="absolute right-0 top-12 w-48 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                
+                                {/* Option 1: Host Ban jao */}
+                                <button 
+                                    onClick={() => {
+                                        setShowMovieMenu(false);
+                                        onHostStart(); // 👈 Parent ka Host function call kiya
+                                    }}
+                                    className="w-full text-left px-4 py-3 hover:bg-slate-700 flex items-center gap-2 text-sm text-white border-b border-slate-700"
+                                >
+                                    <BiPlay className="text-green-400" size={20} />
+                                    <div>
+                                        <span className="font-bold block">Start Stream</span>
+                                        <span className="text-xs text-gray-400">Host a movie</span>
+                                    </div>
+                                </button>
+
+                                {/* Option 2: Join Kar lo */}
+                                <button 
+                                    onClick={() => {
+                                        setShowMovieMenu(false);
+                                        onJoinStart(); // 👈 Parent ka Join function call kiya
+                                    }}
+                                    className="w-full text-left px-4 py-3 hover:bg-slate-700 flex items-center gap-2 text-sm text-white"
+                                >
+                                    <BiShow className="text-blue-400" size={20} />
+                                    <div>
+                                        <span className="font-bold block">Join Stream</span>
+                                        <span className="text-xs text-gray-400">Watch friend's stream</span>
+                                    </div>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

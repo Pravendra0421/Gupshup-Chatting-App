@@ -22,38 +22,35 @@ const FloatingMsg = styled.div`
   font-weight: bold;
   animation: ${floatDown} 5s linear forwards;
   pointer-events: none;
-  z-index: 100; /* Ensure it floats ON TOP */
+  z-index: 100; 
 `;
 
 const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
     const socket = useSocket();
     
     // States
-    const [stream, setStream] = useState(null); // Local Stream (Host) or Remote Stream (Viewer)
+    const [stream, setStream] = useState(null); 
     const [receivingCall, setReceivingCall] = useState(false);
     const [callerSignal, setCallerSignal] = useState(null);
     const [callAccepted, setCallAccepted] = useState(false);
     const [micOn, setMicOn] = useState(true);
     const [floatingMessages, setFloatingMessages] = useState([]);
-
     // Refs
-    const myVideo = useRef();    // Host's Video Element
-    const userVideo = useRef();  // Viewer's Video Element
+    const myVideo = useRef();
+    const userVideo = useRef();
     const connectionRef = useRef();
     const containerRef = useRef();
+
     // --- 1. SOCKET LISTENERS & HANDSHAKE LOGIC ---
     useEffect(() => {
         if (!socket) return;
 
-        // 1. Setup Listeners FIRST (Before doing anything else)
-        
-        // Host Listener
-        const handleViewerJoined = () => {
-            console.log("👀 Viewer joined! Starting Stream...");
+        // Define handlers separately to keep useEffect clean
+        const handleViewerJoined = (viewerId) => {
+            console.log("👀 Viewer joined! Starting Stream...",viewerId);
             initializeHostPeer(); 
         };
 
-        // Viewer Listener (Incoming Signal)
         const handleCallUser = (data) => {
             console.log("📞 Received Signal from Host");
             setReceivingCall(true);
@@ -61,6 +58,7 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
         };
 
         const handleCallAccepted = (signal) => {
+            console.log("✅ Call Accepted by Viewer");
             setCallAccepted(true);
             connectionRef.current?.signal(signal);
         };
@@ -70,22 +68,30 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
             addFloatingMessage(text);
         };
 
+        // REGISTER LISTENERS
         socket.on("viewer-joined", handleViewerJoined);
         socket.on("call-user", handleCallUser);
         socket.on("call-accepted", handleCallAccepted);
         socket.on("msg-recieve", handleChatMsg);
+
+        // TRIGGER INITIAL ACTION
         if (isHost) {
+            // Host just waits...
         } else {
+            // Viewer Logic: Wait a tiny bit to ensure listeners are active, then shout
             console.log("👋 Joining Party...");
-            // Small timeout ensures listeners are bound
-            setTimeout(() => {
-                socket.emit("party-joined", { 
-                    to: currentChat._id, 
-                    from: currentUser._id 
-                });
-            }, 500); 
+            const timer = setTimeout(() => {
+                if(socket.connected) {
+                     socket.emit("party-joined", { 
+                        to: currentChat._id, 
+                        from: currentUser._id 
+                    });
+                }
+            }, 1000); 
+            return () => clearTimeout(timer);
         }
 
+        // CLEANUP
         return () => {
             socket.off("viewer-joined", handleViewerJoined);
             socket.off("call-user", handleCallUser);
@@ -94,18 +100,14 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
             
             if(connectionRef.current) connectionRef.current.destroy();
         };
-    }, [socket, currentChat, isHost]);
+    }, [socket, currentChat, isHost]); 
 
     // --- 2. HOST: INITIALIZE PEER (Send Offer) ---
     const initializeHostPeer = async () => {
         try {
-            // Get Screen (Movie + Audio)
             const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
-            
-            // Get Mic (Voice)
             const voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
-            // Mix Streams
             const mixedStream = new MediaStream();
             screenStream.getTracks().forEach(track => mixedStream.addTrack(track));
             voiceStream.getTracks().forEach(track => mixedStream.addTrack(track));
@@ -113,7 +115,6 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
             setStream(mixedStream);
             if(myVideo.current) myVideo.current.srcObject = mixedStream;
 
-            // Create Peer (Initiator = True)
             const peer = new Peer({
                 initiator: true,
                 trickle: false,
@@ -128,11 +129,17 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
                 });
             });
 
-            // If Viewer sends their audio back
             peer.on("stream", (remoteStream) => {
                 if(userVideo.current) userVideo.current.srcObject = remoteStream;
             });
+            peer.on("close", () => {
+                console.log("Peer connection closed");
+                socket.off("call-accepted"); // Listeners hatayein
+            });
 
+            peer.on("error", (err) => {
+                console.error("Peer connection error:", err);
+            });
             connectionRef.current = peer;
 
         } catch (err) {
@@ -141,12 +148,12 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
         }
     };
 
+    // --- 3. VIEWER: ANSWER CALL (Send Answer) ---
     const answerCall = async () => {
         setCallAccepted(true);
         
-        // Viewer sends only Voice
         const viewerStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        setStream(viewerStream); // Save ref for mic toggle
+        setStream(viewerStream); 
 
         const peer = new Peer({
             initiator: false,
@@ -159,7 +166,6 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
         });
 
         peer.on("stream", (hostStream) => {
-            // Show Host's Movie
             if(userVideo.current) userVideo.current.srcObject = hostStream;
         });
 
@@ -183,7 +189,7 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
     };
 
     const sendNotification = () => {
-        console.log("📤 Sending notify-watch-party to:", currentChat._id);
+        console.log("📤 Sending Invite...");
         socket.emit("notify-watch-party", {
             to: currentChat._id,
             from: currentUser._id,
@@ -197,12 +203,12 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
             {/* --- VIDEO AREA --- */}
             <div className="w-full h-full relative flex items-center justify-center">
                 
-                {/* HOST VIEW: My Screen */}
+                {/* HOST VIEW */}
                 {isHost && stream && (
                     <video ref={myVideo} muted autoPlay playsInline className="w-full h-full object-contain" />
                 )}
 
-                {/* VIEWER VIEW: Host's Screen */}
+                {/* VIEWER VIEW */}
                 {!isHost && callAccepted && (
                     <video ref={userVideo} autoPlay playsInline className="w-full h-full object-contain" />
                 )}
@@ -218,7 +224,7 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
                     </div>
                 )}
 
-                {/* INCOMING CALL UI (Viewer) */}
+                {/* INCOMING CALL UI (Viewer - The "Accept" Screen) */}
                 {!isHost && receivingCall && !callAccepted && (
                     <div className="absolute z-50 bg-slate-800 p-6 rounded-xl shadow-2xl text-center border border-teal-500 animate-pulse">
                         <h2 className="text-xl text-white mb-4">Ready to Watch?</h2>
@@ -228,7 +234,7 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
                     </div>
                 )}
 
-                {/* WAITING UI (Viewer - before signal arrives) */}
+                {/* CONNECTING UI (Viewer - Before Signal) */}
                 {!isHost && !receivingCall && !callAccepted && (
                     <div className="text-white text-xl animate-bounce">
                         Connecting to Party...
@@ -264,7 +270,6 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
                     </button>
                     <button 
                         onClick={() => {
-                            // Cleanup before exit
                             if(stream) stream.getTracks().forEach(track => track.stop());
                             exitMovieMode();
                         }} 
