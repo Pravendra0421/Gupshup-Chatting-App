@@ -108,10 +108,34 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
             const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
             const voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
-            const mixedStream = new MediaStream();
-            screenStream.getTracks().forEach(track => mixedStream.addTrack(track));
-            voiceStream.getTracks().forEach(track => mixedStream.addTrack(track));
+            // const mixedStream = new MediaStream();
+            // screenStream.getTracks().forEach(track => mixedStream.addTrack(track));
+            // voiceStream.getTracks().forEach(track => mixedStream.addTrack(track));
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const destination = audioContext.createMediaStreamDestination();
 
+            // A. Add Screen Audio to Mixer (if exists)
+            if (screenStream.getAudioTracks().length > 0) {
+                const screenSource = audioContext.createMediaStreamSource(screenStream);
+                screenSource.connect(destination);
+            }
+
+            // B. Add Mic Audio to Mixer
+            if (voiceStream.getAudioTracks().length > 0) {
+                const micSource = audioContext.createMediaStreamSource(voiceStream);
+                micSource.connect(destination);
+            }
+
+            // 4. Create Final Stream (Video + Mixed Audio)
+            const mixedStream = new MediaStream();
+            
+            // Add Video Track (from Screen)
+            mixedStream.addTrack(screenStream.getVideoTracks()[0]);
+            
+            // Add Mixed Audio Track (The combined sound)
+            if (destination.stream.getAudioTracks().length > 0) {
+                mixedStream.addTrack(destination.stream.getAudioTracks()[0]);
+            }
             setStream(mixedStream);
             if(myVideo.current) myVideo.current.srcObject = mixedStream;
 
@@ -141,7 +165,10 @@ const MovieRoom = ({ currentUser, currentChat, exitMovieMode, isHost }) => {
                 console.error("Peer connection error:", err);
             });
             connectionRef.current = peer;
-
+            screenStream.getVideoTracks()[0].onended = () => {
+            exitMovieMode();
+            audioContext.close();
+        };
         } catch (err) {
             console.error("Stream Error:", err);
             exitMovieMode(); 
