@@ -265,7 +265,7 @@ const ChatContainer =({currentChat,onBack,currentUser,onlineUsers=[],onHostStart
                     placeholder="Type your message..."
                     value={msg}
                     onChange={handleTyping}
-                    className="grow p-3 rounded-full bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-teal-400"
+                    className="grow p-3 rounded-full bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-teal-400 opacity-100 [-webkit-text-fill-color:white]"
                 />
                 <button 
                     type="submit" 
