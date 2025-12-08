@@ -4,7 +4,9 @@ import React from "react";
 const Robot = "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExOXp5YjJxMm9idXFud2MxNmx5eGNodnZyaTlrdnFiYXc5amh4NXRucSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26FPJGjhefSJuaRhu/giphy.gif";
 
 export default function Welcome({ currentUser }) {
-    
+  if (!currentUser) {
+    return <h1>Loading...</h1>;
+  }
   return (
     <div className="flex justify-center items-center flex-col h-screen text-white  bg-slate-900 text-center p-4">
       {/* 1. Animated Image */}

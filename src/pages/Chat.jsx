@@ -116,10 +116,8 @@ useEffect(() => {
   },[currentUser]);
   console.log(loadingContacts);
   const handleStartHosting = () => {
-    setIsHost(true);       // Main Host hu
-    setIsMovieMode(true);  // Room kholo
-
-    // Optional: Agar aap chahte hain ki host bante hi dusre ko notification jaye
+    setIsHost(true);      
+    setIsMovieMode(true);  
     if (socket && currentChat) {
         socket.emit("start-watch-party", {
             to: currentChat._id,

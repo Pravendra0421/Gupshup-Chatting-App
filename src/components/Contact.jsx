@@ -15,6 +15,7 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket,unreadCou
             setCurrentUserImage(currentUser.avatarImage );
         }
     },[currentUser]);
+    if (!currentUser) return null;
     const changeCurrentChat =(index,contact)=>{
         setcurrentSelected(index);
         changeChat(contact);
@@ -74,21 +75,21 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket,unreadCou
                     })}
                 </div>
                 
-            {currentname && (
+            {currentname && profile (
                 <div className="absolute bottom-8 w-full p-4 bg-slate-900 border-t border-slate-700">
                     <div className="flex items-center justify-between bg-slate-800 rounded-xl p-3 shadow-md">
                         
                         <Link to="/profile" className="flex items-center gap-3 overflow-hidden">
                             <div className="h-10 w-10 flex-shrink-0">
                                 <img
-                                    src={profile.image}
+                                    src={profile?.image}
                                     alt="User"
                                     className="rounded-full h-full w-full object-cover border border-teal-400"
                                 />
                             </div>
                             <div className="hidden md:block truncate">
                                 <h2 className="text-sm font-bold text-white capitalize truncate max-w-[100px]">
-                                    {profile.name}
+                                    {profile?.name}
                                 </h2>
                                 <p className="text-xs text-teal-400">Online</p>
                             </div>
