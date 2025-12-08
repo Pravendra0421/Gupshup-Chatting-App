@@ -75,7 +75,7 @@ const Contact =({contacts,currentUser,changeChat,onlineUsers=[],socket,unreadCou
                     })}
                 </div>
                 
-            {currentname && profile (
+            {currentname && profile &&(
                 <div className="absolute bottom-8 w-full p-4 bg-slate-900 border-t border-slate-700">
                     <div className="flex items-center justify-between bg-slate-800 rounded-xl p-3 shadow-md">
                         
